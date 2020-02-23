@@ -64,6 +64,83 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-Linux启动流程和grub详解" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/02/23/Linux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%92%8Cgrub%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2020-02-23T11:37:44.000Z" itemprop="datePublished">2020-02-23</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Linux/">Linux</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/02/23/Linux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%92%8Cgrub%E8%AF%A6%E8%A7%A3/">Linux启动流程和grub详解</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="硬件启动流程"><a href="#硬件启动流程" class="headerlink" title="硬件启动流程"></a>硬件启动流程</h1><h2 id="开启电源"><a href="#开启电源" class="headerlink" title="开启电源"></a>开启电源</h2><h2 id="BIOS"><a href="#BIOS" class="headerlink" title="BIOS"></a>BIOS</h2><p>POST(Power On Self Test): 初始化硬件设备，检查系统外围设备（CPU，内存，显卡，IO设备，鼠标）</p>
+<p>确定启动设备：</p>
+<p>​    根据BIOS设置的启动顺序，检查驱动器（硬盘，光盘，U盘，软盘）</p>
+<p>​    如果是硬盘启动项，读取硬盘第一个扇区（MBR，512字节）到内存</p>
+<p>​    控制区转给MBR的BootLoader(其中466个字节是存放BootLoader程序)</p>
+<h2 id="MBR"><a href="#MBR" class="headerlink" title="MBR"></a>MBR</h2><p>MBR，共有512个字节，头446个字节存放BootLoader执行代码，主流的BootLoader有Grub，LIOF等，在系统安装的时候写入</p>
+<h1 id="Grub启动引导阶段"><a href="#Grub启动引导阶段" class="headerlink" title="Grub启动引导阶段"></a>Grub启动引导阶段</h1><h2 id="Stage1阶段"><a href="#Stage1阶段" class="headerlink" title="Stage1阶段"></a>Stage1阶段</h2><p>系统安装时被写到MBR中，只安装bootLoader最小程序，主要作用是系统启动装载Stage2</p>
+<h2 id="Stage1-5阶段"><a href="#Stage1-5阶段" class="headerlink" title="Stage1.5阶段"></a>Stage1.5阶段</h2><p>Grub访问/boot/分区grub目录下的文件，因此需要识别/boot文件系统，将Stage2执行文件载入内存并执行</p>
+<h2 id="Stage2阶段"><a href="#Stage2阶段" class="headerlink" title="Stage2阶段"></a>Stage2阶段</h2><p>解析grub的配置文件/boot/grub/grub.conf</p>
+<p>显示操作系统启动菜单</p>
+<p>加载内核镜像到内核</p>
+<p>通过/boot/initrd/开头文件建立虚拟文件系统</p>
+<p>转交给内核</p>
+<h1 id="内核引导阶段"><a href="#内核引导阶段" class="headerlink" title="内核引导阶段"></a>内核引导阶段</h1><p>调用虚拟根文件系统的init</p>
+<p>加载驱动模块初始化系统中的各设备和相关配置，cpu,io,内存等</p>
+<p>加载并切换到真正的根文件系统</p>
+<p>加载/sbin/init进程</p>
+<h1 id="系统初始化阶段"><a href="#系统初始化阶段" class="headerlink" title="系统初始化阶段"></a>系统初始化阶段</h1><h2 id="etc-inittab"><a href="#etc-inittab" class="headerlink" title="/etc/inittab"></a>/etc/inittab</h2><p>获取用户级别</p>
+<h2 id="etc-rc-sysinit"><a href="#etc-rc-sysinit" class="headerlink" title="/etc/rc.sysinit"></a>/etc/rc.sysinit</h2><p>获取网络环境和主机类型</p>
+<p>打印文本欢迎信息</p>
+<p>决定是否启用SELinux</p>
+<p>载入内存设备/proc和USB设备，/sys</p>
+<p>挂载所有/etc/fstab文件系统</p>
+<p>加载核心参数,/etc/sysctl.conf配置相关</p>
+<p>设置系统时间</p>
+<p>设置终端控制台字形</p>
+<h2 id="加载系统服务"><a href="#加载系统服务" class="headerlink" title="加载系统服务"></a>加载系统服务</h2><p>/etc/rc.d/rc#.d: 根据运行级别启动对应的服务 ，S开头（start) K开头 (Stop)</p>
+<p>/etc/rc.local : 加载用户自定义服务</p>
+<h1 id="启动终端"><a href="#启动终端" class="headerlink" title="启动终端"></a>启动终端</h1><h2 id="执行-sbin-mingetty打开终端"><a href="#执行-sbin-mingetty打开终端" class="headerlink" title="执行/sbin/mingetty打开终端"></a>执行/sbin/mingetty打开终端</h2><p>验证登录：</p>
+<p>/etc/nologin: 用户在该文件，不允许登录</p>
+<p>/etc/usertty: </p>
+<p>/etc/passwd &amp; /etc/shadow 验证密码以及账户的主目录以及bash环境等</p>
+<p>登录成功：</p>
+<p>屏幕输出：</p>
+<p>/var/log/lastlog: 输出最近一次登录的信息</p>
+<p>/var/spool/mail: 发邮件</p>
+<p>加载bash环境变量</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2020/02/23/Linux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%92%8Cgrub%E8%AF%A6%E8%A7%A3/" data-id="ck6yzs0rh0000dgmtcze842fq" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-Nginx配置ssl实践和原理剖析" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/02/22/Nginx%E9%85%8D%E7%BD%AEssl%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/" class="article-date">
@@ -374,7 +451,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Categories</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Docker/">Docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/HTTPS/">HTTPS</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Hexo%E6%8A%80%E5%B7%A7/">Hexo技巧</a></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Docker/">Docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/HTTPS/">HTTPS</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Hexo%E6%8A%80%E5%B7%A7/">Hexo技巧</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a></li></ul>
     </div>
   </div>
 
@@ -400,6 +477,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2020/02/23/Linux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%92%8Cgrub%E8%AF%A6%E8%A7%A3/">Linux启动流程和grub详解</a>
+          </li>
         
           <li>
             <a href="/2020/02/22/Nginx%E9%85%8D%E7%BD%AEssl%E5%AE%9E%E8%B7%B5%E5%92%8C%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90/">Nginx配置ssl实践和原理剖析</a>
