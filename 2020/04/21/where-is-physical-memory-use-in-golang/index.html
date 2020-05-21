@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>where is physical memory use in golang | Encho 的笔记</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Prometheus进程消耗物理内存prometheus是基于go语言开发的监控指标收集处理系统，在discovery服务达1k万instances时候，实际物理内存消耗达到40+G，这部分资源具体用到哪里了呢，我们进一步分析： 12345Mem total:65634644 anon:49946532 map:366968 free:659188 slab:489780 buf:133064 c">
+<meta property="og:type" content="article">
+<meta property="og:title" content="where is physical memory use in golang">
+<meta property="og:url" content="http://yoursite.com/2020/04/21/where-is-physical-memory-use-in-golang/index.html">
+<meta property="og:site_name" content="Encho 的笔记">
+<meta property="og:description" content="Prometheus进程消耗物理内存prometheus是基于go语言开发的监控指标收集处理系统，在discovery服务达1k万instances时候，实际物理内存消耗达到40+G，这部分资源具体用到哪里了呢，我们进一步分析： 12345Mem total:65634644 anon:49946532 map:366968 free:659188 slab:489780 buf:133064 c">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://tva1.sinaimg.cn/large/007S8ZIlgy1ge9hmrfu7cj32ce0ck776.jpg">
+<meta property="article:published_time" content="2020-04-21T06:28:59.000Z">
+<meta property="article:modified_time" content="2020-04-28T07:14:38.784Z">
+<meta property="article:author" content="Encho Xu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/007S8ZIlgy1ge9hmrfu7cj32ce0ck776.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="Encho 的笔记" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Encho 的笔记</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-where-is-physical-memory-use-in-golang" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/04/21/where-is-physical-memory-use-in-golang/" class="article-date">
+  <time datetime="2020-04-21T06:28:59.000Z" itemprop="datePublished">2020-04-21</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      where is physical memory use in golang
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Prometheus进程消耗物理内存"><a href="#Prometheus进程消耗物理内存" class="headerlink" title="Prometheus进程消耗物理内存"></a>Prometheus进程消耗物理内存</h1><p>prometheus是基于go语言开发的监控指标收集处理系统，在discovery服务达1k万instances时候，实际物理内存消耗达到40+G，这部分资源具体用到哪里了呢，我们进一步分析：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Mem total:65634644 anon:49946532 map:366968 free:659188</span><br><span class="line"> slab:489780 buf:133064 cache:13690464 dirty:22520 write:0</span><br><span class="line">Swap total:0 free:0</span><br><span class="line">  PID   VSZ^ VSZRW^  RSS (SHR) DIRTY (SHR) STACK COMMAND</span><br><span class="line">    1 63.1g 49.0g 47.0g     4 47.0g     0   136 /bin/prometheus --config.file=/etc/prometheus-shared/prometheus.yml --storage.tsdb.path</span><br></pre></td></tr></table></figure>
+
+<h1 id="从PProf分析内存"><a href="#从PProf分析内存" class="headerlink" title="从PProf分析内存"></a>从PProf分析内存</h1><p>为了能够观察这47G内存的使用分布，我们开启pprof监控进一步观察</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root]<span class="comment"># go tool pprof http://xxxx:9090/debug/pprof/heap</span></span><br><span class="line">Fetching profile over HTTP from http://xxx:9090/debug/pprof/heap</span><br><span class="line">Saved profile <span class="keyword">in</span> /root/pprof/pprof.prometheus.alloc_objects.alloc_space.inuse_objects.inuse_space.026.pb.gz</span><br><span class="line">File: prometheus</span><br><span class="line">Type: inuse_space</span><br><span class="line">Time: Apr 21, 2020 at 2:36pm (CST)</span><br><span class="line">Entering interactive mode (<span class="built_in">type</span> <span class="string">"help"</span> <span class="keyword">for</span> commands, <span class="string">"o"</span> <span class="keyword">for</span> options)</span><br><span class="line">(pprof)</span><br></pre></td></tr></table></figure>
+
+<p>pprof/heap表示可以查看堆内存的使用情况，Type类型有：</p>
+<p>inuse_space(正在使用的objects字节数)、</p>
+<p>inuse_objects（在使用的objects个数）、</p>
+<p>alloc_objects（自进程启动之后已分配objects个数）、</p>
+<p>alloc_space（自进程启动之后已分配objects的字节数）</p>
+<p>备注：alloc_objects和inuse_objects有什么区别呢，alloc_objects指自进程启动起分配过的object个数，有可能该object或者在使用（即inuse_objects), 有可能待回收的object。inuse_objects则表示当前正在使用的objects个数</p>
+<p>默认是查看inuse_space, 用top、list [Func]可以查看具体分配</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Entering interactive mode (<span class="built_in">type</span> <span class="string">"help"</span> <span class="keyword">for</span> commands, <span class="string">"o"</span> <span class="keyword">for</span> options)</span><br><span class="line">(pprof) top</span><br><span class="line">Showing nodes accounting <span class="keyword">for</span> 25324.95MB, 84.96% of 29808.50MB total</span><br><span class="line">Dropped 477 nodes (cum &lt;= 149.04MB)</span><br><span class="line">Showing top 10 nodes out of 64</span><br><span class="line">      flat  flat%   sum%        cum   cum%</span><br><span class="line"> 5796.21MB 19.44% 19.44%  5796.21MB 19.44%  github.com/prometheus/prometheus/tsdb/encoding.(*Decbuf).UvarintStr</span><br><span class="line"> 5098.98MB 17.11% 36.55%  5098.98MB 17.11%  github.com/prometheus/prometheus/pkg/labels.(*Builder).Labels</span><br><span class="line"> 4710.57MB 15.80% 52.35% 10504.27MB 35.24%  github.com/prometheus/prometheus/tsdb/record.(*Decoder).Series</span><br><span class="line"> 2044.29MB  6.86% 59.21%  2044.29MB  6.86%  github.com/prometheus/prometheus/tsdb/chunkenc.(*bstream).writeByte</span><br><span class="line"> 1704.81MB  5.72% 64.93%  1704.81MB  5.72%  github.com/prometheus/prometheus/tsdb.newMemSeries</span><br><span class="line"> 1600.64MB  5.37% 70.30%  1600.64MB  5.37%  github.com/prometheus/prometheus/tsdb/chunkenc.NewXORChunk</span><br><span class="line"> 1568.91MB  5.26% 75.56%  1576.41MB  5.29%  github.com/prometheus/prometheus/pkg/textparse.(*PromParser).Metric</span><br><span class="line"> 1128.20MB  3.78% 79.35%  1128.20MB  3.78%  github.com/prometheus/prometheus/tsdb/index.(*MemPostings).Delete</span><br><span class="line">  868.79MB  2.91% 82.26%   868.79MB  2.91%  github.com/prometheus/prometheus/tsdb/chunkenc.(*bstream).writeBit</span><br><span class="line">  803.56MB  2.70% 84.96%   803.56MB  2.70%  github.com/prometheus/prometheus/scrape.(*scrapeCache).addRef</span><br></pre></td></tr></table></figure>
+
+<p>可以调用list uvarintStr可以查看具体分配内存的源码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">(pprof) list UvarintStr</span><br><span class="line">Total: 29.11GB</span><br><span class="line">ROUTINE &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; github.com&#x2F;prometheus&#x2F;prometheus&#x2F;tsdb&#x2F;encoding.(*Decbuf).UvarintStr in &#x2F;app&#x2F;tsdb&#x2F;encoding&#x2F;encoding.go</span><br><span class="line">    5.66GB     5.66GB (flat, cum) 19.44% of Total</span><br><span class="line">         .          .    182:	&#125;</span><br><span class="line">         .          .    183:	d.B &#x3D; d.B[l:]</span><br><span class="line">         .          .    184:&#125;</span><br><span class="line">         .          .    185:</span><br><span class="line">         .          .    186:func (d *Decbuf) UvarintStr() string &#123;</span><br><span class="line">    5.66GB     5.66GB    187:	return string(d.UvarintBytes())</span><br><span class="line">         .          .    188:&#125;</span><br><span class="line">         .          .    189:</span><br><span class="line">         .          .    190:&#x2F;&#x2F; The return value becomes invalid if the byte slice goes away.</span><br><span class="line">         .          .    191:&#x2F;&#x2F; Compared to UvarintStr, this avoid allocations.</span><br><span class="line">         .          .    192:func (d *Decbuf) UvarintBytes() []byte &#123;</span><br></pre></td></tr></table></figure>
+
+<p>暂且不看这里使用是否合理，我们先看看top使用总内存29.11GB，那么剩下的47-29.11=16G内存消耗在哪里呢？为了继续寻找答案，我们在打印更多的MemStat信息：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root]<span class="comment"># curl -s http://xxxx:9090/debug/pprof/heap?debug=1 |grep -A 20 runtime.MemStat</span></span><br><span class="line"><span class="comment"># runtime.MemStats</span></span><br><span class="line"><span class="comment"># Alloc = 37017585928 (34G)</span></span><br><span class="line"><span class="comment"># TotalAlloc = 618427689120 (575G)</span></span><br><span class="line"><span class="comment"># Sys = 52634519600  (49G)</span></span><br><span class="line"><span class="comment"># Lookups = 0</span></span><br><span class="line"><span class="comment"># Mallocs = 2050932877 (1955M)</span></span><br><span class="line"><span class="comment"># Frees = 1673239162	(1595M)</span></span><br><span class="line"><span class="comment"># HeapAlloc = 37017585928 (34G)</span></span><br><span class="line"><span class="comment"># HeapSys = 49707450368	(46G)</span></span><br><span class="line"><span class="comment"># HeapIdle = 8838963200	(8G)</span></span><br><span class="line"><span class="comment"># HeapInuse = 40868487168	(38G)</span></span><br><span class="line"><span class="comment"># HeapReleased = 1766555648 (1684M)</span></span><br><span class="line"><span class="comment"># HeapObjects = 377693715	</span></span><br><span class="line"><span class="comment"># Stack = 154435584 / 154435584  (147M/147M)</span></span><br><span class="line"><span class="comment"># MSpan = 650976104 / 684310528  (620M/ 652M )</span></span><br><span class="line"><span class="comment"># MCache = 55552 / 65536</span></span><br><span class="line"><span class="comment"># BuckHashSys = 2620168</span></span><br><span class="line"><span class="comment"># GCSys = 1964607488</span></span><br><span class="line"><span class="comment"># OtherSys = 121029928</span></span><br><span class="line"><span class="comment"># NextGC = 61802483552</span></span><br><span class="line"><span class="comment"># LastGC = 1587451560202279773</span></span><br></pre></td></tr></table></figure>
+
+<p>这个就是运行时（runtime)的内存信息，我们先一一解释下各个字段的含义：(感兴趣可以看<a href="https://github.com/golang/go/blob/master/src/runtime/mstats.go源码MemStats" target="_blank" rel="noopener">https://github.com/golang/go/blob/master/src/runtime/mstats.go源码MemStats</a> struct结构说明)</p>
+<p><strong>Alloc</strong>：已分配的堆objects字节数（和HeapAlloc含义一样）</p>
+<p><strong>TotalAlloc</strong>：已分配的堆objects累计字节数，该值持续增加</p>
+<p><strong>Sys</strong>：从OS获得的内存的总字节数，等于HeapSys+GCSys+OtherSys+xxxSys的总和，衡量存放堆、栈和其他内部数据结构使用的内存空间，在某个时刻这些虚拟地址空间不会全部真正被映射到物理地址。</p>
+<p><strong>Mallocs</strong>：指累计已分配的堆里objects个数，活跃的objects个数=Mallocs-Frees</p>
+<p><strong>Frees</strong>: 指累计已释放的堆里objects个数</p>
+<p><strong>HeapAlloc</strong>: 指已分配objects的字节数。这里也包括还未被内存回收回收掉，且未使用的object。</p>
+<p><strong>HeapObjects</strong>：指已分配objects的个数</p>
+<p><strong>HeapSys</strong>：指从OS申请给堆内存使用的字节数。</p>
+<p><strong>HeapIdle</strong>： 指空闲的span字节数（首次提到span，暂且理解为一个span有 pages组成，里面存放objects），这部分内存可以重复被运行时使用，或者回收。</p>
+<p><strong>HeapInuse</strong>：指至少有一个object在使用span空间的字节数，以span为单元计算，类似于集装箱。</p>
+<p><strong>HeapReleased</strong>：表示在HeapIdle空闲的span里，哪些已经是物理内存回收掉的字节数。</p>
+<p><strong>Stack</strong>： StackInuse(在使用的) /StackSys( 已申请的StackSys)</p>
+<p><strong>MSpan</strong>: MSpanInuse / MSpanSys</p>
+<p><strong>MCache</strong>: MCacheInuse / MCacheSys</p>
+<p><strong>BuckHashSys</strong>: is bytes of memory in profiling bucket hash tables.</p>
+<p><strong>GCSys</strong>:存放垃圾回收的元数据</p>
+<p><strong>OtherSys</strong>：非堆申请的其他内存空间</p>
+<p><strong>NextGC</strong>：下次进行gc回收的目标堆大小</p>
+<p><strong>LastGC</strong>： 上次进行gc的时间戳</p>
+<p>因此，从OS申请的内存= 堆申请的内存+栈申请的内存+Mspan管理的内存+MCache管理的内存+hash表申请的内存+gc回收使用内存+其他申请的内存空间</p>
+<p>这里数据可以肯定，申请堆内存占了大头（46G/49G约占了93%)，这批内存的使用分配情况如下：</p>
+<p>HeapSys(46G) = HeapIdle (8G) +  HeapInuse(38G)</p>
+<p>即在抓取的某个时刻，有8G的空闲span+36G至少有一个object的span空间。 这8G内存由go运行时垃圾回收定时优化，38G已使用span空间里面，有34G已分配的objects（即HeapAlloc)，装箱率达到(34/36)94%。</p>
+<p>这34G申请的objects空间, 在使用的约29.11G,另外有4.89G的object未被回收.</p>
+<p>结论：因此可以得出，真正在使用的除了29.11G，其他内存占用情况如下：</p>
+<p>4.89G objects已使用未回收+ 4G span内存有额外空闲objects + 8G 空闲span =14.89G </p>
+<p>这里的objects已使用未回收和span内有额外空闲objects怎么理解呢？我们继续往下看go运行时内存是如何管理的。</p>
+<h1 id="go运行时内存管理"><a href="#go运行时内存管理" class="headerlink" title="go运行时内存管理"></a>go运行时内存管理</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><p>golang摒弃了传统的内存管理，改成自行管理，每次分配时不需要每次系统调用申请内存。</p>
+<p>内存分配器在管理内存块分两种关键<strong>对象</strong>：</p>
+<p>span：由多个地址连续的页（pages）组成的大内存块。</p>
+<p>object: 将span按照特定大小切分成多个块(object)，每个块可以存储一个对象</p>
+<p>span数据结构如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> mspan <span class="keyword">struct</span> &#123;</span><br><span class="line">next	*mspan			<span class="comment">//双向链表</span></span><br><span class="line">prev	*mspan			</span><br><span class="line">start	pageID			<span class="comment">//起始页序号 =（ address &gt;&gt; _PageShift(13))</span></span><br><span class="line">npages	<span class="keyword">uintptr</span>   <span class="comment">//页数</span></span><br><span class="line">freelist gclinkptr  <span class="comment">// 待分配的object链表</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>用户存储对象的Object，按8字节*2n的倍数分为67种span规格，规格如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> _NumSizeClasses = <span class="number">67</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> class_to_size = [_NumSizeClasses]<span class="keyword">uint16</span>&#123;<span class="number">0</span>, <span class="number">8</span>, <span class="number">16</span>, <span class="number">32</span>, <span class="number">48</span>, <span class="number">64</span>, <span class="number">80</span>, <span class="number">96</span>, <span class="number">112</span>, <span class="number">128</span>, <span class="number">144</span>, <span class="number">160</span>, <span class="number">176</span>, <span class="number">192</span>, <span class="number">208</span>, <span class="number">224</span>, <span class="number">240</span>, <span class="number">256</span>, <span class="number">288</span>, <span class="number">320</span>, <span class="number">352</span>, <span class="number">384</span>, <span class="number">416</span>, <span class="number">448</span>, <span class="number">480</span>, <span class="number">512</span>, <span class="number">576</span>, <span class="number">640</span>, <span class="number">704</span>, <span class="number">768</span>, <span class="number">896</span>, <span class="number">1024</span>, <span class="number">1152</span>, <span class="number">1280</span>, <span class="number">1408</span>, <span class="number">1536</span>,<span class="number">1792</span>, <span class="number">2048</span>, <span class="number">2304</span>, <span class="number">2688</span>, <span class="number">3072</span>, <span class="number">3200</span>, <span class="number">3456</span>, <span class="number">4096</span>, <span class="number">4864</span>, <span class="number">5376</span>, <span class="number">6144</span>, <span class="number">6528</span>, <span class="number">6784</span>, <span class="number">6912</span>, <span class="number">8192</span>, <span class="number">9472</span>, <span class="number">9728</span>, <span class="number">10240</span>, <span class="number">10880</span>, <span class="number">12288</span>, <span class="number">13568</span>, <span class="number">14336</span>, <span class="number">16384</span>, <span class="number">18432</span>, <span class="number">19072</span>, <span class="number">20480</span>, <span class="number">21760</span>, <span class="number">24576</span>, <span class="number">27264</span>, <span class="number">28672</span>, <span class="number">32768</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p>每一种规格的span需要的pages页也不一样(8k/page)，比如span按64字节为一个object划分，span需要的页数是1，即8k：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> class_to_allocnpages = [_NumSizeClasses]<span class="keyword">uint8</span>&#123;<span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">1</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">2</span>, <span class="number">9</span>, <span class="number">7</span>, <span class="number">5</span>, <span class="number">8</span>, <span class="number">3</span>, <span class="number">10</span>, <span class="number">7</span>, <span class="number">4</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>分配器</strong>由三种组件组成（主要是管理和分配span和object）：</p>
+<p>Cache: 每个运行期工作线程会分配一个cache，用于每个P线程无锁分配object；</p>
+<p>Central：为Cache提供切分好的span资源；</p>
+<p>Heap：管理限制span，需要时向操作系统申请新内存；</p>
+<p>其中:</p>
+<p>Heap数据结构：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">type mheap struct &#123;</span><br><span class="line"></span><br><span class="line">	&#x2F;&#x2F; allspans is a slice of all mspans ever created. Each mspan</span><br><span class="line">	&#x2F;&#x2F; appears exactly once.</span><br><span class="line">	&#x2F;&#x2F;</span><br><span class="line">	&#x2F;&#x2F; The memory for allspans is manually managed and can be</span><br><span class="line">	&#x2F;&#x2F; reallocated and move as the heap grows.</span><br><span class="line">	&#x2F;&#x2F;</span><br><span class="line">	&#x2F;&#x2F; In general, allspans is protected by mheap_.lock, which</span><br><span class="line">	&#x2F;&#x2F; prevents concurrent access as well as freeing the backing</span><br><span class="line">	&#x2F;&#x2F; store. Accesses during STW might not hold the lock, but</span><br><span class="line">	&#x2F;&#x2F; must ensure that allocation cannot happen around the</span><br><span class="line">	&#x2F;&#x2F; access (since that may free the backing store).</span><br><span class="line">	allspans []*mspan &#x2F;&#x2F; all spans out there</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	&#x2F;&#x2F; central free lists for small size classes.</span><br><span class="line">	&#x2F;&#x2F; the padding makes sure that the mcentrals are</span><br><span class="line">	&#x2F;&#x2F; spaced CacheLinePadSize bytes apart, so that each mcentral.lock</span><br><span class="line">	&#x2F;&#x2F; gets its own cache line.</span><br><span class="line">	&#x2F;&#x2F; central is indexed by spanClass.</span><br><span class="line">	&#x2F;&#x2F; 每一种central 对应一种sizeclass</span><br><span class="line">	central [numSpanClasses]struct &#123;</span><br><span class="line">		mcentral mcentral</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>mcentral</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">type mcentral struct &#123;</span><br><span class="line">	sizeclass int32</span><br><span class="line">	nonempty mspan  &#x2F;&#x2F;链表：空闲object的span</span><br><span class="line">	empty  mspan  &#x2F;&#x2F;链表：没有空闲object, 或已经被cache去走的span</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>mcache</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">type mcache struct &#123;</span><br><span class="line">	alloc [_NumSizeClasses] *mspan</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>分配流程：</p>
+<ol>
+<li>计算待分配对象的规格(size class)</li>
+<li>从cache.alloc 数组找到规则相同的span</li>
+<li>从span.freelist链表取可用的object</li>
+<li>如果span.freelist为空，从central获取新的span</li>
+<li>如果central.nonempty为空，从heap.free/freelarge获取，并切成obect链表</li>
+<li>如果heap没有大小合适的闲置span，向系统申请内存</li>
+</ol>
+<h2 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h2><p>go程序启动时，会向操作系统申请一块大内存（虚拟地址空间)，保存在mheap里面，该空间被分为3大空间：</p>
+<p><img src="https://tva1.sinaimg.cn/large/007S8ZIlgy1ge9hmrfu7cj32ce0ck776.jpg" alt="企业微信20200428024841"></p>
+<p>即分成三个高性能的内存管理结构：</p>
+<ol>
+<li>Arena: 向操作系统申请的内存（按页申请），决定用户可分配内存上限，go1.14以上使用512GB.</li>
+<li>Bitmap:为每个object提供4bit标记位，用以保存指针，GC标记等信息.</li>
+<li>Span: 创建span，按页填充span空间，回收object时，只需按页地址对其可以找到span</li>
+</ol>
+<h2 id="分配内存"><a href="#分配内存" class="headerlink" title="分配内存"></a>分配内存</h2><p>我们以下面的demo为例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2020/04/21/where-is-physical-memory-use-in-golang/" data-id="ckag7tkpl000a3pmt6znnfb9z" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/03/24/%E8%BE%93%E5%87%BA%E6%89%8D%E6%98%AF%E5%BF%AB%E9%80%9F%E9%98%85%E8%AF%BB%E7%9A%84%E6%9C%89%E6%95%88%E7%B2%BE%E8%AF%BB/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">输出才是快速阅读的有效精读</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Docker/">Docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/HTTPS/">HTTPS</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Hexo%E6%8A%80%E5%B7%A7/">Hexo技巧</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/TCP%E6%97%B6%E5%BA%8F%E5%9B%BE/">TCP时序图</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/04/21/where-is-physical-memory-use-in-golang/">where is physical memory use in golang</a>
+          </li>
+        
+          <li>
+            <a href="/2020/03/24/%E8%BE%93%E5%87%BA%E6%89%8D%E6%98%AF%E5%BF%AB%E9%80%9F%E9%98%85%E8%AF%BB%E7%9A%84%E6%9C%89%E6%95%88%E7%B2%BE%E8%AF%BB/">输出才是快速阅读的有效精读</a>
+          </li>
+        
+          <li>
+            <a href="/2020/02/29/Openssl-%E7%9F%A5%E8%AF%86/">Openssl 知识</a>
+          </li>
+        
+          <li>
+            <a href="/2020/02/23/TCP%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%E5%92%8C%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E6%97%B6%E5%BA%8F%E5%9B%BE/">TCP三次握手和四次挥手时序图</a>
+          </li>
+        
+          <li>
+            <a href="/2020/02/23/Linux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B%E5%92%8Cgrub%E8%AF%A6%E8%A7%A3/">Linux启动流程和grub详解</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Encho Xu<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

@@ -5,15 +5,17 @@
   
 
   
-  <title>categories | Encho 的笔记</title>
+  <title>Openssl 知识 | Encho 的笔记</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="categories">
-<meta property="og:url" content="http://yoursite.com/categories/index.html">
+  <meta name="description" content="一、为什么需要加密：防止网络窃听行为； 加密技术（cryptography) 机密性：confidentlity 二、对称加密（symmetric cryptography)在加密和解密时使用相同的密钥。目前广泛使用AES。 对称密码的多种别名： 公共密钥密码：common-key cryptography 传统密码：conventional cryptography 私钥密码： secret-k">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Openssl 知识">
+<meta property="og:url" content="http://yoursite.com/2020/02/29/Openssl-%E7%9F%A5%E8%AF%86/index.html">
 <meta property="og:site_name" content="Encho 的笔记">
+<meta property="og:description" content="一、为什么需要加密：防止网络窃听行为； 加密技术（cryptography) 机密性：confidentlity 二、对称加密（symmetric cryptography)在加密和解密时使用相同的密钥。目前广泛使用AES。 对称密码的多种别名： 公共密钥密码：common-key cryptography 传统密码：conventional cryptography 私钥密码： secret-k">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2020-02-18T14:40:01.000Z">
-<meta property="article:modified_time" content="2020-02-18T14:40:40.932Z">
+<meta property="article:published_time" content="2020-02-29T07:05:52.000Z">
+<meta property="article:modified_time" content="2020-02-29T07:40:38.352Z">
 <meta property="article:author" content="Encho Xu">
 <meta name="twitter:card" content="summary">
   
@@ -64,10 +66,10 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main"><article id="page-" class="article article-type-page" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-Openssl-知识" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/categories/index.html" class="article-date">
-  <time datetime="2020-02-18T14:40:01.000Z" itemprop="datePublished">2020-02-18</time>
+    <a href="/2020/02/29/Openssl-%E7%9F%A5%E8%AF%86/" class="article-date">
+  <time datetime="2020-02-29T07:05:52.000Z" itemprop="datePublished">2020-02-29</time>
 </a>
     
   </div>
@@ -78,7 +80,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      categories
+      Openssl 知识
     </h1>
   
 
@@ -86,17 +88,54 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h1 id="一、为什么需要加密："><a href="#一、为什么需要加密：" class="headerlink" title="一、为什么需要加密："></a>一、为什么需要加密：</h1><p>防止网络窃听行为；</p>
+<p>加密技术（cryptography)</p>
+<p>机密性：confidentlity</p>
+<h1 id="二、对称加密（symmetric-cryptography"><a href="#二、对称加密（symmetric-cryptography" class="headerlink" title="二、对称加密（symmetric cryptography)"></a>二、对称加密（symmetric cryptography)</h1><p>在加密和解密时使用相同的密钥。目前广泛使用AES。</p>
+<p>对称密码的多种别名：</p>
+<p>公共密钥密码：common-key cryptography</p>
+<p>传统密码：conventional cryptography</p>
+<p>私钥密码： secret-key cryptography</p>
+<p>共享密钥密码：shared-key cryptography</p>
+<h1 id="三、非对称加密"><a href="#三、非对称加密" class="headerlink" title="三、非对称加密"></a>三、非对称加密</h1><p>目前广泛使用的：RSA，Elgamal，Rabin，DH，ECDH</p>
+<h1 id="四、单行散列函数"><a href="#四、单行散列函数" class="headerlink" title="四、单行散列函数"></a>四、单行散列函数</h1><p>为了防止被篡改，有意识的给发布的软件发布一个散列值hash。散列值是用单向散列函数计算出来的值。目前广泛使用的SHA-2(SHA-224,SHA-356,SHA-384,SHA-512)和SHA-3（Keccak算法）</p>
+<p>散列值，又被称为Hash值、密码校验和（cryptography checksum）、指纹：fingerpritnt、消息摘要（message digest)</p>
+<p>散列值保证了数据的完整性（intergrity)</p>
+<h1 id="五、消息认证码"><a href="#五、消息认证码" class="headerlink" title="五、消息认证码"></a>五、消息认证码</h1><p>为了确认消息来自期望的通讯对象，引入消息认证码（message authentication code)</p>
+<p>消息验证码最常用的单向散列函数是HMAC</p>
+<h1 id="六、数字签名"><a href="#六、数字签名" class="headerlink" title="六、数字签名"></a>六、数字签名</h1><p>数字签名类似现实生活中的签名和盖章，防止用户抵赖，伪装，伪造，篡改的密码技术。</p>
+<p>签名算法包括：RSA、Elgamal、DSA、椭圆曲线DSA（ECDSA）、爱德华兹曲线DSA（EDDSA）</p>
+<p>参考：<a href="https://halfrost.com/cryptography_overview/" target="_blank" rel="noopener">https://halfrost.com/cryptography_overview/</a></p>
+<h1 id=""><a href="#" class="headerlink" title=""></a></h1>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/categories/index.html" data-id="ckag7tkpi00073pmtfqnb98ei" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2020/02/29/Openssl-%E7%9F%A5%E8%AF%86/" data-id="ckag7tkpo000e3pmthckv29qb" class="article-share-link">Share</a>
       
       
     </footer>
   </div>
   
     
+<nav id="article-nav">
+  
+    <a href="/2020/03/24/%E8%BE%93%E5%87%BA%E6%89%8D%E6%98%AF%E5%BF%AB%E9%80%9F%E9%98%85%E8%AF%BB%E7%9A%84%E6%9C%89%E6%95%88%E7%B2%BE%E8%AF%BB/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          输出才是快速阅读的有效精读
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/02/23/TCP%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%E5%92%8C%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B%E6%97%B6%E5%BA%8F%E5%9B%BE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">TCP三次握手和四次挥手时序图</div>
+    </a>
+  
+</nav>
+
   
 </article>
 
